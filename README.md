@@ -128,7 +128,7 @@ PGADMIN_PASSWORD=Admin.123456
 ### 3. Levantar el proyecto con Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 Este comando:
@@ -142,7 +142,7 @@ Este comando:
 
 ```bash
 # Ver logs del backend
-docker-compose logs -f backend
+docker compose logs -f backend
 
 # Ver estado de los contenedores
 docker ps
@@ -213,7 +213,7 @@ Verás una salida similar a:
 
 ```bash
 # Desde el directorio backend/
-docker-compose exec backend npx prisma db seed
+docker compose exec backend npx prisma db seed
 ```
 
 **Nota**: Este método puede fallar debido a problemas de bcrypt con Alpine Linux. Si falla, usa el Método 1.
@@ -283,7 +283,7 @@ El script hace limpieza automática:
 **Los datos no aparecen después del seed**
 
 - Verifica que el backend está corriendo: `docker ps`
-- Revisa los logs: `docker-compose logs backend`
+- Revisa los logs: `docker compose logs backend`
 - Prueba los endpoints directamente con curl
 
 ---
@@ -378,7 +378,7 @@ backend/
 │   ├── schema.prisma      # Modelos de datos
 │   └── seed.ts            # Datos de prueba
 │
-├── docker-compose.yml     # Orquestación de servicios
+├── docker compose.yml     # Orquestación de servicios
 ├── Dockerfile             # Imagen del backend
 ├── package.json
 ├── tsconfig.json
@@ -668,30 +668,30 @@ Verás 3 tablas:
 
 ```bash
 # Ver logs
-docker-compose logs backend
+docker compose logs backend
 
 # Reiniciar contenedor
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Error de conexión a PostgreSQL
 
 ```bash
 # Verificar que PostgreSQL está corriendo
-docker-compose ps
+docker compose ps
 
 # Reiniciar PostgreSQL
-docker-compose restart postgres
+docker compose restart postgres
 
 # Esperar unos segundos y reiniciar backend
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Las migraciones fallan
 
 ```bash
 # Entrar al contenedor del backend
-docker-compose exec backend sh
+docker compose exec backend sh
 
 # Ejecutar migraciones manualmente
 npx prisma migrate deploy
@@ -704,20 +704,20 @@ npx prisma db seed
 
 ```bash
 # Detener servicios
-docker-compose down
+docker compose down
 
 # Eliminar volúmenes (¡Esto borrará todos los datos!)
-docker-compose down -v
+docker compose down -v
 
 # Volver a levantar
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Puerto 3001/5432/5050 ya está en uso
 
 **Nota**: El backend ya usa el puerto **3001** (no 3000) para evitar conflictos con otros servicios.
 
-Si necesitas cambiar los puertos, editar `docker-compose.yml`:
+Si necesitas cambiar los puertos, editar `docker compose.yml`:
 
 ```yaml
 services:

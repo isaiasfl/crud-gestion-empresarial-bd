@@ -48,18 +48,18 @@ Backend completo con Node.js, TypeScript, Express, Prisma y PostgreSQL para gest
 
 ## 🛠 Stack Tecnológico
 
-| Tecnología | Versión | Propósito |
-|------------|---------|-----------|
-| Node.js | 20 LTS | Runtime de JavaScript |
-| TypeScript | 5.7+ | Lenguaje con tipado estático |
-| Express | 5.x | Framework web |
-| Prisma | 6.x | ORM para PostgreSQL |
-| PostgreSQL | 16 | Base de datos relacional |
-| Zod | 3.x | Validaciones de esquemas |
-| bcrypt | 5.x | Hash de contraseñas |
-| JWT | 9.x | Tokens de autenticación |
-| Docker | - | Containerización |
-| pgAdmin | 4 | Administrador visual de PostgreSQL |
+| Tecnología | Versión | Propósito                          |
+| ---------- | ------- | ---------------------------------- |
+| Node.js    | 20 LTS  | Runtime de JavaScript              |
+| TypeScript | 5.7+    | Lenguaje con tipado estático       |
+| Express    | 5.x     | Framework web                      |
+| Prisma     | 6.x     | ORM para PostgreSQL                |
+| PostgreSQL | 16      | Base de datos relacional           |
+| Zod        | 3.x     | Validaciones de esquemas           |
+| bcrypt     | 5.x     | Hash de contraseñas                |
+| JWT        | 9.x     | Tokens de autenticación            |
+| Docker     | -       | Containerización                   |
+| pgAdmin    | 4       | Administrador visual de PostgreSQL |
 
 ---
 
@@ -94,7 +94,7 @@ POSTGRES_DB=contacts_db
 DATABASE_URL=postgresql://admin:admin123@postgres:5432/contacts_db
 
 # Server
-PORT=3000  # Puerto interno del contenedor (se mapea a 3001 externamente)
+PORT=3001  # Puerto de la API (Puedes cambiarlo y Docker se sincronizará automáticamente)
 NODE_ENV=development
 
 # Authentication (false = sin auth, true = con JWT)
@@ -110,52 +110,64 @@ PGADMIN_PASSWORD=Admin.123456
 ### 3. Levantar el proyecto con Docker
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
 Este comando:
+
 - ✅ Descarga las imágenes necesarias (PostgreSQL, pgAdmin, Node)
 - ✅ Crea los contenedores
 - ✅ Ejecuta las migraciones de Prisma
-- ✅ Inicia el backend en http://localhost:3001
+- ✅ **Ejecuta el Seed automáticamente** (puebla la base de datos)
+- ✅ Inicia el backend en el puerto configurado en el `.env` (por defecto http://localhost:3001)
+
+> **💡 Consejo sobre los Puertos:** Si cambias el valor de `PORT` en el archivo `.env`, Docker se sincronizará automáticamente. Solo tendrás que ejecutar `docker compose up -d` para aplicar el cambio de puerto exterior.
 
 ### 4. Verificar que todo funciona
 
 ```bash
-# Ver logs del backend
-docker-compose logs -f backend
+# Ver logs del backend para confirmar el seed
+docker compose logs -f backend
 
 # Ver estado de los contenedores
 docker ps
 ```
 
-Deberías ver 3 contenedores corriendo:
-- `crud_postgres` (PostgreSQL)
-- `crud_pgadmin` (pgAdmin)
-- `crud_backend` (API)
-
 ---
 
 ## 🌱 Poblar la Base de Datos (Seed)
 
-**IMPORTANTE**: El seed NO se ejecuta automáticamente al levantar los contenedores debido a problemas de compatibilidad de bcrypt con Alpine Linux. Debes ejecutarlo manualmente.
+El seed se ejecuta automáticamente la primera vez que levantas el contenedor. Si necesitas resetear los datos o ejecutarlo de nuevo manualmente:
+
+### Método 1: Desde el contenedor (Recomendado) ⭐
+
+```bash
+docker exec -it crud_backend npm run prisma:seed
+```
+
+### Método 2: Desde el host
+
+```bash
+# Asegúrate de haber hecho npm install en el host
+npm run prisma:seed
+```
 
 ### ¿Qué datos incluye el seed?
 
 El script de seed (`prisma/seed.ts`) inserta datos de prueba realistas:
 
-| Tabla | Cantidad | Descripción |
-|-------|----------|-------------|
-| **Users** | 2 usuarios | Usuarios de prueba para autenticación |
-| **Companies** | 4 empresas | Google, Microsoft, Amazon, Meta |
-| **Contacts** | 10 contactos | 8 contactos con empresa + 2 freelance |
+| Tabla         | Cantidad     | Descripción                           |
+| ------------- | ------------ | ------------------------------------- |
+| **Users**     | 2 usuarios   | Usuarios de prueba para autenticación |
+| **Companies** | 4 empresas   | Google, Microsoft, Amazon, Meta       |
+| **Contacts**  | 10 contactos | 8 contactos con empresa + 2 freelance |
 
 ### Credenciales de los usuarios de prueba:
 
-| Email | Password | Uso |
-|-------|----------|-----|
+| Email            | Password | Uso                     |
+| ---------------- | -------- | ----------------------- |
 | demo@example.com | Demo123! | Usuario de demostración |
-| test@example.com | Test123! | Usuario de testing |
+| test@example.com | Test123! | Usuario de testing      |
 
 ### Método 1: Ejecutar seed desde el host (Recomendado) ⭐
 
@@ -170,6 +182,7 @@ npm run prisma:seed
 ```
 
 Verás una salida similar a:
+
 ```
 🌱 Iniciando seed de la base de datos...
 ✅ Datos anteriores eliminados
@@ -192,7 +205,7 @@ Verás una salida similar a:
 
 ```bash
 # Desde el directorio backend/
-docker-compose exec backend npx prisma db seed
+docker compose exec backend npx prisma db seed
 ```
 
 **Nota**: Este método puede fallar debido a problemas de bcrypt con Alpine Linux. Si falla, usa el Método 1.
@@ -218,6 +231,7 @@ curl http://localhost:3001/api/companies | jq '.companies[].name'
 ```
 
 Salida esperada:
+
 ```json
 "Meta"
 "Amazon"
@@ -235,6 +249,7 @@ npm run prisma:seed
 ```
 
 El script hace limpieza automática:
+
 1. Elimina todos los contactos
 2. Elimina todas las empresas
 3. Elimina todos los usuarios
@@ -243,20 +258,19 @@ El script hace limpieza automática:
 ### Troubleshooting del Seed
 
 **Error: "Port is already allocated" o problemas con puerto 3000**
+
 - El backend se ejecuta en el puerto **3001** (no 3000)
 - Verifica con: `docker ps | grep crud_backend`
 
-**Error: "bcrypt segmentation fault" en Docker**
-- Usa el Método 1 (desde el host) en lugar de dentro del contenedor
-- Alpine Linux + bcrypt nativo tienen problemas de compatibilidad
-
 **Error: "Cannot find module tsx"**
+
 - Asegúrate de haber ejecutado `npm install` primero
 - Verifica que estás en el directorio `backend/`
 
 **Los datos no aparecen después del seed**
+
 - Verifica que el backend está corriendo: `docker ps`
-- Revisa los logs: `docker-compose logs backend`
+- Revisa los logs: `docker compose logs backend`
 - Prueba los endpoints directamente con curl
 
 ---
@@ -265,11 +279,11 @@ El script hace limpieza automática:
 
 ### Servicios disponibles
 
-| Servicio | URL | Credenciales |
-|----------|-----|--------------|
-| **Backend API** | http://localhost:3001 | - |
-| **pgAdmin** | http://localhost:5050 | Email: admin@admin.com<br>Password: Admin.123456 |
-| **PostgreSQL** | localhost:5432 | User: admin<br>Password: admin123<br>DB: contacts_db |
+| Servicio        | URL                   | Credenciales                                         |
+| --------------- | --------------------- | ---------------------------------------------------- |
+| **Backend API** | http://localhost:3001 | -                                                    |
+| **pgAdmin**     | http://localhost:5050 | Email: admin@admin.com<br>Password: Admin.123456     |
+| **PostgreSQL**  | http://localhost:5432 | User: admin<br>Password: admin123<br>DB: contacts_db |
 
 ### Probar la API
 
@@ -351,7 +365,7 @@ backend/
 │   ├── schema.prisma      # Modelos de datos
 │   └── seed.ts            # Datos de prueba
 │
-├── docker-compose.yml     # Orquestación de servicios
+├── docker compose.yml     # Orquestación de servicios
 ├── Dockerfile             # Imagen del backend
 ├── package.json
 ├── tsconfig.json
@@ -364,6 +378,7 @@ backend/
 ## 🔌 Endpoints de la API
 
 ### Base URL
+
 ```
 http://localhost:3001/api
 ```
@@ -372,34 +387,35 @@ http://localhost:3001/api
 
 ### 🔐 Autenticación
 
-| Método | Endpoint | Descripción | Requiere Auth |
-|--------|----------|-------------|---------------|
-| POST | `/auth/register` | Registrar nuevo usuario | ❌ |
-| POST | `/auth/login` | Iniciar sesión (obtener JWT) | ❌ |
-| GET | `/auth/me` | Obtener usuario autenticado | ✅ |
+| Método | Endpoint         | Descripción                  | Requiere Auth |
+| ------ | ---------------- | ---------------------------- | ------------- |
+| POST   | `/auth/register` | Registrar nuevo usuario      | ❌            |
+| POST   | `/auth/login`    | Iniciar sesión (obtener JWT) | ❌            |
+| GET    | `/auth/me`       | Obtener usuario autenticado  | ✅            |
 
 ### 🏢 Empresas
 
-| Método | Endpoint | Descripción | Requiere Auth |
-|--------|----------|-------------|---------------|
-| GET | `/companies` | Listar todas las empresas | ⚙️ |
-| GET | `/companies/:id` | Obtener empresa por ID | ⚙️ |
-| POST | `/companies` | Crear nueva empresa | ⚙️ |
-| PUT | `/companies/:id` | Actualizar empresa | ⚙️ |
-| DELETE | `/companies/:id` | Eliminar empresa | ⚙️ |
-| GET | `/companies/:id/contacts` | Contactos de una empresa | ⚙️ |
+| Método | Endpoint                  | Descripción               | Requiere Auth |
+| ------ | ------------------------- | ------------------------- | ------------- |
+| GET    | `/companies`              | Listar todas las empresas | ⚙️            |
+| GET    | `/companies/:id`          | Obtener empresa por ID    | ⚙️            |
+| POST   | `/companies`              | Crear nueva empresa       | ⚙️            |
+| PUT    | `/companies/:id`          | Actualizar empresa        | ⚙️            |
+| DELETE | `/companies/:id`          | Eliminar empresa          | ⚙️            |
+| GET    | `/companies/:id/contacts` | Contactos de una empresa  | ⚙️            |
 
 ### 👤 Contactos
 
-| Método | Endpoint | Descripción | Requiere Auth |
-|--------|----------|-------------|---------------|
-| GET | `/contacts` | Listar todos los contactos | ⚙️ |
-| GET | `/contacts/:id` | Obtener contacto por ID | ⚙️ |
-| POST | `/contacts` | Crear nuevo contacto | ⚙️ |
-| PUT | `/contacts/:id` | Actualizar contacto | ⚙️ |
-| DELETE | `/contacts/:id` | Eliminar contacto | ⚙️ |
+| Método | Endpoint        | Descripción                | Requiere Auth |
+| ------ | --------------- | -------------------------- | ------------- |
+| GET    | `/contacts`     | Listar todos los contactos | ⚙️            |
+| GET    | `/contacts/:id` | Obtener contacto por ID    | ⚙️            |
+| POST   | `/contacts`     | Crear nuevo contacto       | ⚙️            |
+| PUT    | `/contacts/:id` | Actualizar contacto        | ⚙️            |
+| DELETE | `/contacts/:id` | Eliminar contacto          | ⚙️            |
 
 **Leyenda:**
+
 - ✅ = Siempre requiere autenticación
 - ❌ = No requiere autenticación
 - ⚙️ = Depende de `AUTH_REQUIRED` (false = no requiere, true = requiere)
@@ -413,17 +429,21 @@ http://localhost:3001/api
 Este backend tiene un sistema de autenticación **opcional** controlado por la variable `AUTH_REQUIRED`:
 
 #### Modo 1: Sin autenticación (por defecto)
+
 ```env
 AUTH_REQUIRED=false
 ```
+
 - Los endpoints de CRUD funcionan **sin token**
 - Ideal para desarrollo y alumnos principiantes
 - Pueden practicar CRUD sin implementar login
 
 #### Modo 2: Con autenticación
+
 ```env
 AUTH_REQUIRED=true
 ```
+
 - Los endpoints de CRUD **requieren token JWT**
 - Los alumnos deben implementar login en el frontend
 - Token se envía en header: `Authorization: Bearer <token>`
@@ -432,8 +452,8 @@ AUTH_REQUIRED=true
 
 El seed incluye 2 usuarios para testing:
 
-| Email | Password |
-|-------|----------|
+| Email            | Password |
+| ---------------- | -------- |
 | demo@example.com | Demo123! |
 | test@example.com | Test123! |
 
@@ -448,6 +468,7 @@ curl http://localhost:3001/api/companies
 ```
 
 **Respuesta:**
+
 ```json
 {
   "companies": [
@@ -482,6 +503,7 @@ curl -X POST http://localhost:3001/api/contacts \
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Contacto creado exitosamente",
@@ -519,6 +541,7 @@ curl -X POST http://localhost:3001/api/auth/register \
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Usuario registrado exitosamente",
@@ -544,6 +567,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ```
 
 **Respuesta:**
+
 ```json
 {
   "message": "Login exitoso",
@@ -618,6 +642,7 @@ Servers → CRUD Database → Databases → contacts_db → Schemas → public �
 ```
 
 Verás 3 tablas:
+
 - `users` (usuarios para autenticación)
 - `companies` (empresas)
 - `contacts` (contactos)
@@ -630,30 +655,30 @@ Verás 3 tablas:
 
 ```bash
 # Ver logs
-docker-compose logs backend
+docker compose logs backend
 
 # Reiniciar contenedor
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Error de conexión a PostgreSQL
 
 ```bash
 # Verificar que PostgreSQL está corriendo
-docker-compose ps
+docker compose ps
 
 # Reiniciar PostgreSQL
-docker-compose restart postgres
+docker compose restart postgres
 
 # Esperar unos segundos y reiniciar backend
-docker-compose restart backend
+docker compose restart backend
 ```
 
 ### Las migraciones fallan
 
 ```bash
 # Entrar al contenedor del backend
-docker-compose exec backend sh
+docker compose exec backend sh
 
 # Ejecutar migraciones manualmente
 npx prisma migrate deploy
@@ -666,34 +691,34 @@ npx prisma db seed
 
 ```bash
 # Detener servicios
-docker-compose down
+docker compose down
 
 # Eliminar volúmenes (¡Esto borrará todos los datos!)
-docker-compose down -v
+docker compose down -v
 
 # Volver a levantar
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Puerto 3001/5432/5050 ya está en uso
 
 **Nota**: El backend ya usa el puerto **3001** (no 3000) para evitar conflictos con otros servicios.
 
-Si necesitas cambiar los puertos, editar `docker-compose.yml`:
+Si necesitas cambiar los puertos, editar `docker compose.yml`:
 
 ```yaml
 services:
   backend:
     ports:
-      - "3002:3000"  # Cambiar 3001 a 3002
+      - "3002:3000" # Cambiar 3001 a 3002
 
   postgres:
     ports:
-      - "5433:5432"  # Cambiar 5432 a 5433
+      - "5433:5432" # Cambiar 5432 a 5433
 
   pgadmin:
     ports:
-      - "5051:80"    # Cambiar 5050 a 5051
+      - "5051:80" # Cambiar 5050 a 5051
 ```
 
 **Importante**: No cambies el segundo número (puerto interno del contenedor), solo el primero (puerto externo de tu máquina).

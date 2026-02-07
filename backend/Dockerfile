@@ -17,8 +17,8 @@ COPY . .
 # Generar cliente de Prisma
 RUN npx prisma generate
 
-# Exponer el puerto 3000
-EXPOSE 3000
+# El puerto se define vía variable de entorno en docker-compose
+# EXPOSE es informativo
 
 # Comando por defecto (desarrollo con hot reload)
 # En producción se puede cambiar a: npm run build && npm start

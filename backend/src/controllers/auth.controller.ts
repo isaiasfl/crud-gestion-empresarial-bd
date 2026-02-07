@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
-import { prisma } from '../lib/prisma.js';
-import { generateToken } from '../utils/jwt.utils.js';
-import { registerSchema, loginSchema } from '../validators/auth.validator.js';
+import bcrypt from "bcryptjs";
+import { NextFunction, Request, Response } from "express";
+import { prisma } from "../lib/prisma.js";
+import { generateToken } from "../utils/jwt.utils.js";
+import { loginSchema, registerSchema } from "../validators/auth.validator.js";
 
 /**
  * Controlador de autenticación
@@ -13,7 +13,11 @@ import { registerSchema, loginSchema } from '../validators/auth.validator.js';
  * POST /api/auth/register
  * Registra un nuevo usuario
  */
-export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function register(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     // Validar datos de entrada
     const data = registerSchema.parse(req.body);
@@ -25,8 +29,8 @@ export async function register(req: Request, res: Response, next: NextFunction):
 
     if (existingUser) {
       res.status(409).json({
-        error: 'Conflicto',
-        message: 'El email ya está registrado',
+        error: "Conflicto",
+        message: "El email ya está registrado",
       });
       return;
     }
@@ -57,7 +61,7 @@ export async function register(req: Request, res: Response, next: NextFunction):
 
     // Responder con el usuario y el token
     res.status(201).json({
-      message: 'Usuario registrado exitosamente',
+      message: "Usuario registrado exitosamente",
       user,
       token,
     });
@@ -70,7 +74,11 @@ export async function register(req: Request, res: Response, next: NextFunction):
  * POST /api/auth/login
  * Inicia sesión con email y contraseña
  */
-export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function login(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     // Validar datos de entrada
     const data = loginSchema.parse(req.body);
@@ -82,19 +90,22 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
     if (!user) {
       res.status(401).json({
-        error: 'No autorizado',
-        message: 'Credenciales inválidas',
+        error: "No autorizado",
+        message: "Credenciales inválidas",
       });
       return;
     }
 
     // Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(data.password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(
+      data.password,
+      user.passwordHash,
+    );
 
     if (!isPasswordValid) {
       res.status(401).json({
-        error: 'No autorizado',
-        message: 'Credenciales inválidas',
+        error: "No autorizado",
+        message: "Credenciales inválidas",
       });
       return;
     }
@@ -107,7 +118,7 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 
     // Responder con el usuario (sin password) y el token
     res.status(200).json({
-      message: 'Login exitoso',
+      message: "Login exitoso",
       user: {
         id: user.id,
         email: user.email,
@@ -126,13 +137,17 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
  * Obtiene la información del usuario autenticado
  * Requiere token JWT válido
  */
-export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getMe(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
   try {
     // El middleware requireAuth ya verificó el token y adjuntó req.user
     if (!req.user) {
       res.status(401).json({
-        error: 'No autorizado',
-        message: 'Token requerido',
+        error: "No autorizado",
+        message: "Token requerido",
       });
       return;
     }
@@ -151,8 +166,8 @@ export async function getMe(req: Request, res: Response, next: NextFunction): Pr
 
     if (!user) {
       res.status(404).json({
-        error: 'No encontrado',
-        message: 'Usuario no encontrado',
+        error: "No encontrado",
+        message: "Usuario no encontrado",
       });
       return;
     }
